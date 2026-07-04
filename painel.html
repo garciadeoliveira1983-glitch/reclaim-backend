@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECLAIM — Painel do Terapeuta</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-box { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 16px; padding: 40px; width: 380px; }
+  .login-logo { text-align: center; margin-bottom: 32px; }
+  .login-logo h1 { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: .05em; }
+  .login-logo p { font-size: 13px; color: #64748b; margin-top: 4px; }
+  header { background: #1a1d2e; border-bottom: 1px solid #2d3748; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-left h1 { font-size: 18px; font-weight: 600; color: #fff; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+  .badge-blue { background: #1e3a5f; color: #60a5fa; }
+  .badge-green { background: #064e3b; color: #34d399; }
+  .badge-red { background: #7f1d1d; color: #fca5a5; }
+  .badge-yellow { background: #451a03; color: #fbbf24; }
+  .user-info { font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 12px; }
+  .btn-logout { padding: 6px 14px; background: transparent; border: 1px solid #2d3748; border-radius: 6px; color: #94a3b8; font-size: 12px; cursor: pointer; }
+  .btn-logout:hover { border-color: #ef4444; color: #ef4444; }
+  .tabs { display: flex; gap: 4px; padding: 16px 32px 0; background: #1a1d2e; border-bottom: 1px solid #2d3748; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #64748b; cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: system-ui, sans-serif; }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: #60a5fa; border-bottom-color: #3b82f6; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 12px; padding: 24px; }
+  .card h2 { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 16px; }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  input[type=text], input[type=number], input[type=email], input[type=password], select { width: 100%; padding: 8px 12px; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; font-size: 13px; font-family: system-ui, sans-serif; }
+  input:focus, select:focus { outline: none; border-color: #3b82f6; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn { width: 100%; padding: 10px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; font-family: system-ui, sans-serif; }
+  .btn:hover { background: #2563eb; }
+  .btn-green { background: #10b981; }
+  .btn-green:hover { background: #059669; }
+  .patient-list { display: flex; flex-direction: column; gap: 12px; }
+  .patient-card { background: #0f1117; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; }
+  .patient-card:hover { border-color: #3b82f6; }
+  .patient-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .patient-info h3 { font-size: 14px; font-weight: 600; color: #fff; }
+  .patient-info p { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .patient-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .btn-sm { padding: 6px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: system-ui, sans-serif; }
+  .btn-sess { background: #10b981; color: #fff; }
+  .btn-sess:hover { background: #059669; }
+  .btn-laudo { background: #3b82f6; color: #fff; }
+  .btn-laudo:hover { background: #2563eb; }
+  .btn-hist { background: #7c3aed; color: #fff; }
+  .btn-hist:hover { background: #6d28d9; }
+  .msg { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-top: 12px; display: none; }
+  .msg-ok  { background: #064e3b; color: #34d399; border: 1px solid #065f46; }
+  .msg-err { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+  .session-box { background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; padding: 14px; font-size: 11px; font-family: monospace; color: #94a3b8; white-space: pre-wrap; max-height: 260px; overflow-y: auto; margin-top: 10px; display: none; }
+  .scale-label { display: flex; justify-content: space-between; font-size: 10px; color: #64748b; margin-top: 2px; }
+  .usuario-card { background: #0f1117; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .usuario-info h3 { font-size: 14px; font-weight: 600; color: #fff; }
+  .usuario-info p { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .btn-del { background: #ef4444; color: #fff; }
+  .btn-del:hover { background: #dc2626; }
+
+  /* HISTÓRICO */
+  .hist-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .hist-select { padding: 8px 12px; background: #0f1117; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; font-size: 13px; min-width: 280px; }
+  .timeline { display: flex; flex-direction: column; gap: 12px; }
+  .timeline-item { background: #0f1117; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; border-left: 3px solid #3b82f6; }
+  .timeline-item.laudo { border-left-color: #10b981; }
+  .timeline-item.biofeedback { border-left-color: #f59e0b; }
+  .timeline-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .timeline-top h3 { font-size: 13px; font-weight: 600; color: #fff; }
+  .timeline-top span { font-size: 11px; color: #64748b; }
+  .timeline-body { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+  .timeline-body strong { color: #e2e8f0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: #1a1d2e; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: #60a5fa; }
+  .stat-card .lbl { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .empty { color: #64748b; font-size: 13px; text-align: center; padding: 32px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="tela-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>RECLAIM</h1>
+      <p>Painel do Terapeuta — v1.2.0</p>
+    </div>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" value="admin@reclaim.com"></div>
+    <div class="form-group"><label>Senha</label><input type="password" id="login-senha" value="Admin26"></div>
+    <button class="btn" onclick="fazerLogin()">Entrar</button>
+    <div class="msg msg-err" id="login-err">Email ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div id="tela-painel" style="display:none">
+  <header>
+    <div class="header-left">
+      <h1>RECLAIM</h1>
+      <span class="badge badge-blue">v1.2.0</span>
+      <span class="badge badge-green">Painel do Terapeuta</span>
+      <span class="badge badge-red" id="badge-role" style="display:none">ADMIN</span>
+    </div>
+    <div class="user-info">
+      <span id="nome-usuario"></span>
+      <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="mostrarAba('aba-pacientes', this)">Pacientes</button>
+    <button class="tab" onclick="mostrarAba('aba-historico', this)">Histórico de Sessões</button>
+    <button class="tab" id="tab-usuarios" onclick="mostrarAba('aba-usuarios', this)" style="display:none">Gerenciar Usuários</button>
+  </div>
+
+  <!-- ABA PACIENTES -->
+  <div class="tab-content active" id="aba-pacientes">
+    <div class="container">
+      <div class="grid">
+        <div class="card">
+          <h2>Novo Paciente</h2>
+          <div class="form-group"><label>ID do Terapeuta (CRP)</label><input type="text" id="therapist_id" value="crp_12345_sp"></div>
+          <div class="row">
+            <div class="form-group"><label>Substância Principal</label>
+              <select id="target_substance">
+                <option value="alcohol">Álcool</option><option value="crack">Crack</option>
+                <option value="cocaine">Cocaína</option><option value="cannabis">Cannabis</option>
+                <option value="opioids">Opioides</option><option value="stimulants_amphet">Anfetaminas</option>
+                <option value="benzodiazepines">Benzodiazepínicos</option><option value="multiple">Múltiplas</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Fase do Tratamento</label>
+              <select id="treatment_phase">
+                <option value="inpatient">Internação</option><option value="outpatient">Ambulatorial</option><option value="post_discharge">Pós-alta</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group"><label>Estágio Prochaska</label>
+              <select id="prochaska_stage">
+                <option value="contemplation">Contemplação</option><option value="preparation">Preparação</option>
+                <option value="action">Ação</option><option value="maintenance">Manutenção</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Framework Clínico</label>
+              <select id="coping_framework">
+                <option value="knapp_br">Knapp BR</option><option value="marlatt_original">Marlatt Original</option>
+                <option value="cbt">TCC</option><option value="dbt">DBT</option><option value="12_steps">12 Passos</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="form-group"><label>Dias abstinente</label><input type="number" id="days_abstinent" value="0" min="0"></div>
+            <div class="form-group"><label>Histórico de recaídas</label><input type="number" id="relapse_history_count" value="0" min="0"></div>
+          </div>
+          <h2 style="margin-top:16px">Gatilhos por Cenário (0–10)</h2>
+          <div class="row">
+            <div class="form-group"><label>Rua / Social</label><input type="number" id="trigger_street_social" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Festa</label><input type="number" id="trigger_party" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Trabalho</label><input type="number" id="trigger_workplace" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Família</label><input type="number" id="trigger_family" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Solidão</label><input type="number" id="trigger_solitude" value="5" min="0" max="10"></div>
+          </div>
+          <h2 style="margin-top:16px">SARs — Marlatt/Knapp (0–10)</h2>
+          <div class="row">
+            <div class="form-group"><label>Emoções negativas</label><input type="number" id="sar_negative_emotions" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Desconforto físico</label><input type="number" id="sar_physical_discomfort" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Emoções positivas</label><input type="number" id="sar_positive_emotions" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Conflito interpessoal</label><input type="number" id="sar_interpersonal_conflict" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Pressão social</label><input type="number" id="sar_social_pressure" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Momentos agradáveis</label><input type="number" id="sar_pleasant_moments" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Fissura / Craving</label><input type="number" id="sar_craving_urge" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Adesão ao tratamento</label><input type="number" id="sar_treatment_adherence" value="5" min="0" max="10"></div>
+          </div>
+          <h2 style="margin-top:16px">Coping Baseline (0–10)</h2>
+          <div class="row">
+            <div class="form-group"><label>Recusa assertiva</label><input type="number" id="coping_assertive_refusal" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Respiração guiada</label><input type="number" id="coping_guided_breathing" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Contato com aliado</label><input type="number" id="coping_ally_contact" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Urge surfing</label><input type="number" id="coping_urge_surfing" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Checklist HALT</label><input type="number" id="coping_halt_awareness" value="5" min="0" max="10"></div>
+            <div class="form-group"><label>Ativ. comportamental</label><input type="number" id="coping_behavioral_activation" value="5" min="0" max="10"></div>
+          </div>
+          <h2 style="margin-top:16px">Rede de Apoio</h2>
+          <div class="row">
+            <div class="form-group"><label>Tem aliado principal?</label>
+              <select id="has_primary_ally"><option value="true">Sim</option><option value="false">Não</option></select>
+            </div>
+            <div class="form-group"><label>Relacionamento do aliado</label>
+              <select id="ally_relationship">
+                <option value="spouse">Cônjuge</option><option value="parent">Pai/Mãe</option>
+                <option value="sponsor">Padrinho/Madrinha</option><option value="sibling">Irmão/Irmã</option>
+                <option value="close_friend">Amigo próximo</option><option value="therapist">Terapeuta</option>
+              </select>
+            </div>
+          </div>
+          <h2 style="margin-top:16px">Cartão de Enfrentamento</h2>
+          <div class="form-group"><label>Estratégia 1</label><input type="text" id="card1" placeholder="ex: Ligar para minha esposa imediatamente"></div>
+          <div class="form-group"><label>Estratégia 2</label><input type="text" id="card2" placeholder="ex: Sair do local e caminhar 5 minutos"></div>
+          <div class="form-group"><label>Estratégia 3</label><input type="text" id="card3" placeholder="ex: A fissura passa em 20 minutos"></div>
+          <h2 style="margin-top:16px">Triagem de Segurança VR</h2>
+          <div class="row">
+            <div class="form-group"><label>Epilepsia?</label><select id="contraindication_epilepsy"><option value="false">Não</option><option value="true">Sim</option></select></div>
+            <div class="form-group"><label>Cardiopatia?</label><select id="contraindication_cardiac"><option value="false">Não</option><option value="true">Sim</option></select></div>
+            <div class="form-group"><label>Psicose ativa?</label><select id="contraindication_active_psychosis"><option value="false">Não</option><option value="true">Sim</option></select></div>
+            <div class="form-group"><label>Cinetose?</label><select id="contraindication_motion_sickness"><option value="false">Não</option><option value="true">Sim</option></select></div>
+          </div>
+          <button class="btn" onclick="criarPaciente()">Criar Paciente</button>
+          <div class="msg msg-ok" id="msg-ok"></div>
+          <div class="msg msg-err" id="msg-err"></div>
+        </div>
+        <div class="card">
+          <h2>Pacientes Cadastrados</h2>
+          <button class="btn btn-green" onclick="carregarPacientes()" style="margin-bottom:16px">Atualizar Lista</button>
+          <div class="patient-list" id="patient-list"><p style="color:#64748b;font-size:13px">Clique em "Atualizar Lista" para carregar.</p></div>
+          <div class="session-box" id="session-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA HISTÓRICO -->
+  <div class="tab-content" id="aba-historico">
+    <div class="container">
+      <div class="hist-header">
+        <div>
+          <h2 style="font-size:18px;font-weight:600;color:#fff;margin-bottom:4px">Histórico de Sessões</h2>
+          <p style="font-size:13px;color:#64748b">Selecione um paciente para ver o histórico completo</p>
+        </div>
+        <select class="hist-select" id="hist-select" onchange="carregarHistorico(this.value)">
+          <option value="">Selecione um paciente...</option>
+        </select>
+      </div>
+      <div id="hist-stats" class="stat-grid" style="display:none">
+        <div class="stat-card"><div class="num" id="stat-sessoes">0</div><div class="lbl">Sessões geradas</div></div>
+        <div class="stat-card"><div class="num" id="stat-laudos">0</div><div class="lbl">Laudos gerados</div></div>
+        <div class="stat-card"><div class="num" id="stat-bio">0</div><div class="lbl">Calibrações</div></div>
+      </div>
+      <div class="timeline" id="hist-timeline">
+        <div class="empty">Selecione um paciente para ver o histórico.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA USUÁRIOS -->
+  <div class="tab-content" id="aba-usuarios">
+    <div class="container">
+      <div class="grid">
+        <div class="card">
+          <h2>Cadastrar Novo Psicólogo</h2>
+          <div class="form-group"><label>Nome completo</label><input type="text" id="novo-nome" placeholder="Dr. João Silva"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="novo-email" placeholder="joao@reclaim.com"></div>
+          <div class="form-group"><label>Senha inicial</label><input type="password" id="novo-senha" placeholder="mínimo 6 caracteres"></div>
+          <div class="form-group"><label>Perfil</label>
+            <select id="novo-role">
+              <option value="terapeuta">Terapeuta</option>
+              <option value="psicologo">Psicólogo</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          <button class="btn btn-green" onclick="criarUsuario()">Cadastrar Usuário</button>
+          <div class="msg msg-ok" id="msg-usuario-ok"></div>
+          <div class="msg msg-err" id="msg-usuario-err"></div>
+        </div>
+        <div class="card">
+          <h2>Usuários Cadastrados</h2>
+          <button class="btn" onclick="carregarUsuarios()" style="margin-bottom:16px">Atualizar Lista</button>
+          <div id="lista-usuarios"><p style="color:#64748b;font-size:13px">Clique em "Atualizar Lista" para carregar.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:8001';
+let TOKEN = '', ROLE = '', PACIENTES = [];
+
+function val(id){ return document.getElementById(id).value; }
+function bool(id){ return val(id) === 'true'; }
+function num(id){ return parseInt(val(id)); }
+function headers(){ return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }; }
+
+function mostrarAba(id, btn){
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if(id === 'aba-usuarios') carregarUsuarios();
+  if(id === 'aba-historico') popularSelectHistorico();
+}
+
+async function fazerLogin(){
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  const form = new URLSearchParams();
+  form.append('username', val('login-email'));
+  form.append('password', val('login-senha'));
+  try {
+    const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:form });
+    if(!r.ok){ err.style.display='block'; return; }
+    const d = await r.json();
+    TOKEN = d.access_token; ROLE = d.role;
+    document.getElementById('nome-usuario').textContent = d.nome;
+    document.getElementById('tela-login').style.display = 'none';
+    document.getElementById('tela-painel').style.display = 'block';
+    if(ROLE === 'admin'){
+      document.getElementById('badge-role').style.display = 'inline-block';
+      document.getElementById('tab-usuarios').style.display = 'inline-block';
+    }
+    carregarPacientes();
+  } catch(e){ err.style.display='block'; }
+}
+
+function sair(){ TOKEN=''; ROLE=''; document.getElementById('tela-painel').style.display='none'; document.getElementById('tela-login').style.display='flex'; }
+
+async function criarPaciente(){
+  const ok=document.getElementById('msg-ok'), err=document.getElementById('msg-err');
+  ok.style.display='none'; err.style.display='none';
+  const body = {
+    therapist_id:val('therapist_id'), target_substance:val('target_substance'), treatment_phase:val('treatment_phase'),
+    prochaska_stage:val('prochaska_stage'), coping_framework:val('coping_framework'),
+    days_abstinent:num('days_abstinent'), relapse_history_count:num('relapse_history_count'),
+    trigger_street_social:num('trigger_street_social'), trigger_party:num('trigger_party'),
+    trigger_workplace:num('trigger_workplace'), trigger_family:num('trigger_family'), trigger_solitude:num('trigger_solitude'),
+    sar_negative_emotions:num('sar_negative_emotions'), sar_physical_discomfort:num('sar_physical_discomfort'),
+    sar_positive_emotions:num('sar_positive_emotions'), sar_interpersonal_conflict:num('sar_interpersonal_conflict'),
+    sar_social_pressure:num('sar_social_pressure'), sar_pleasant_moments:num('sar_pleasant_moments'),
+    sar_craving_urge:num('sar_craving_urge'), sar_treatment_adherence:num('sar_treatment_adherence'),
+    coping_assertive_refusal:num('coping_assertive_refusal'), coping_guided_breathing:num('coping_guided_breathing'),
+    coping_ally_contact:num('coping_ally_contact'), coping_urge_surfing:num('coping_urge_surfing'),
+    coping_halt_awareness:num('coping_halt_awareness'), coping_behavioral_activation:num('coping_behavioral_activation'),
+    has_primary_ally:bool('has_primary_ally'), ally_relationship:val('ally_relationship'),
+    has_sponsor:false, support_network_size:'moderate',
+    coping_card_strategy_1:val('card1'), coping_card_strategy_2:val('card2'), coping_card_strategy_3:val('card3'),
+    contraindication_epilepsy:bool('contraindication_epilepsy'), contraindication_cardiac:bool('contraindication_cardiac'),
+    contraindication_active_psychosis:bool('contraindication_active_psychosis'),
+    contraindication_motion_sickness:bool('contraindication_motion_sickness'),
+    fc_abort_threshold_bpm:140, eda_abort_threshold_delta:2.0
+  };
+  try {
+    const r = await fetch(`${API}/api/patient-profile`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const d = await r.json();
+    ok.textContent = `Paciente criado! ID: ${d.patient_id}`; ok.style.display='block';
+    carregarPacientes();
+  } catch(e){ err.textContent='Erro ao criar paciente.'; err.style.display='block'; }
+}
+
+async function carregarPacientes(){
+  const lista = document.getElementById('patient-list');
+  lista.innerHTML = '<p style="color:#64748b;font-size:13px">Carregando...</p>';
+  try {
+    const r = await fetch(`${API}/api/patient-profiles`, {headers:headers()});
+    const d = await r.json();
+    PACIENTES = d.pacientes;
+    if(!PACIENTES.length){ lista.innerHTML='<p style="color:#64748b;font-size:13px">Nenhum paciente cadastrado.</p>'; return; }
+    lista.innerHTML = PACIENTES.map(p=>`
+      <div class="patient-card">
+        <div class="patient-top">
+          <div class="patient-info">
+            <h3>${p.patient_id.substring(0,8)}...</h3>
+            <p>${p.target_substance} · ${p.treatment_phase} · ${p.prochaska_stage}</p>
+            <p style="font-size:11px;color:#475569;margin-top:2px">${p.timestamp_intake?p.timestamp_intake.substring(0,10):''}</p>
+          </div>
+          <span class="badge badge-blue">${p.coping_framework}</span>
+        </div>
+        <div class="patient-actions">
+          <button class="btn-sm btn-sess"  onclick="gerarConfig('${p.patient_id}')">Gerar Sessão</button>
+          <button class="btn-sm btn-laudo" onclick="gerarLaudo('${p.patient_id}')">Gerar Laudo PDF</button>
+          <button class="btn-sm btn-hist"  onclick="verHistorico('${p.patient_id}')">Ver Histórico</button>
+        </div>
+      </div>`).join('');
+  } catch(e){ lista.innerHTML='<p style="color:#fca5a5;font-size:13px">Erro ao carregar.</p>'; }
+}
+
+async function gerarConfig(patient_id){
+  const box=document.getElementById('session-box');
+  box.style.display='block'; box.textContent='Gerando session config...';
+  try {
+    const r = await fetch(`${API}/api/session-config/${patient_id}`, {method:'POST', headers:headers()});
+    const d = await r.json();
+    box.textContent = JSON.stringify(d, null, 2);
+  } catch(e){ box.textContent='Erro ao gerar sessão.'; }
+}
+
+async function gerarLaudo(patient_id){
+  const box=document.getElementById('session-box');
+  box.style.display='block'; box.textContent='Gerando laudo PDF com IA... aguarde...';
+  try {
+    const r = await fetch(`${API}/api/laudo/${patient_id}`, {method:'POST', headers:headers()});
+    if(!r.ok){ box.textContent='Erro ao gerar laudo.'; return; }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `laudo_reclaim_${patient_id.substring(0,8)}.pdf`;
+    a.click();
+    box.textContent = 'Laudo gerado e baixado com sucesso!';
+  } catch(e){ box.textContent='Erro ao gerar laudo.'; }
+}
+
+function verHistorico(patient_id){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('aba-historico').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  popularSelectHistorico();
+  document.getElementById('hist-select').value = patient_id;
+  carregarHistorico(patient_id);
+}
+
+function popularSelectHistorico(){
+  const sel = document.getElementById('hist-select');
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Selecione um paciente...</option>';
+  PACIENTES.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.patient_id;
+    opt.textContent = `${p.patient_id.substring(0,8)}... — ${p.target_substance} · ${p.treatment_phase}`;
+    sel.appendChild(opt);
+  });
+  if(atual) sel.value = atual;
+}
+
+async function carregarHistorico(patient_id){
+  if(!patient_id){ document.getElementById('hist-timeline').innerHTML='<div class="empty">Selecione um paciente para ver o histórico.</div>'; document.getElementById('hist-stats').style.display='none'; return; }
+  document.getElementById('hist-timeline').innerHTML='<div class="empty">Carregando...</div>';
+  try {
+    const [rSess, rLaudos, rBio] = await Promise.all([
+      fetch(`${API}/api/session-configs/${patient_id}`, {headers:headers()}),
+      fetch(`${API}/api/laudos/${patient_id}`, {headers:headers()}),
+      fetch(`${API}/api/biofeedback/${patient_id}`, {headers:headers()})
+    ]);
+    const dSess   = await rSess.json();
+    const dLaudos = rLaudos.ok ? await rLaudos.json() : {total:0, laudos:[]};
+    const dBio    = rBio.ok ? await rBio.json() : {total:0, calibracoes:[]};
+
+    document.getElementById('stat-sessoes').textContent = dSess.total || 0;
+    document.getElementById('stat-laudos').textContent  = dLaudos.total || 0;
+    document.getElementById('stat-bio').textContent     = dBio.total || 0;
+    document.getElementById('hist-stats').style.display = 'grid';
+
+    const itens = [];
+    (dSess.sessoes||[]).forEach(s=>{
+      itens.push({tipo:'sessao', ts: s.session_metadata?.timestamp || '', data: s});
+    });
+    (dLaudos.laudos||[]).forEach(l=>{
+      itens.push({tipo:'laudo', ts: l.timestamp || '', data: l});
+    });
+    (dBio.calibracoes||[]).forEach(b=>{
+      itens.push({tipo:'biofeedback', ts: b.timestamp || '', data: b});
+    });
+    itens.sort((a,b)=> b.ts.localeCompare(a.ts));
+
+    if(!itens.length){ document.getElementById('hist-timeline').innerHTML='<div class="empty">Nenhum registro encontrado para este paciente.</div>'; return; }
+
+    document.getElementById('hist-timeline').innerHTML = itens.map(item=>{
+      const data = item.ts ? item.ts.substring(0,16).replace('T',' às ') : '—';
+      if(item.tipo==='sessao'){
+        const s = item.data;
+        const env = s.procedural_generation_rules?.active_environment_id || '—';
+        const sar = s.procedural_generation_rules?.primary_sar_active || '—';
+        const nivel = s.procedural_generation_rules?.difficulty_matrix?.initial_exposure_level || '—';
+        return `<div class="timeline-item">
+          <div class="timeline-top"><h3>🎮 Sessão VR gerada</h3><span>${data}</span></div>
+          <div class="timeline-body">
+            <strong>Cenário:</strong> ${env} &nbsp;|&nbsp; <strong>SAR dominante:</strong> ${sar} &nbsp;|&nbsp; <strong>Nível de exposição:</strong> ${nivel}
+          </div>
+        </div>`;
+      }
+      if(item.tipo==='laudo'){
+        return `<div class="timeline-item laudo">
+          <div class="timeline-top"><h3>📄 Laudo PDF gerado</h3><span>${data}</span></div>
+          <div class="timeline-body"><strong>ID do laudo:</strong> ${item.data.laudo_id?.substring(0,8) || '—'}...</div>
+        </div>`;
+      }
+      if(item.tipo==='biofeedback'){
+        const v = item.data.validacao || {};
+        const liberada = v.sessao_liberada ? '✅ Liberada' : '❌ Bloqueada';
+        return `<div class="timeline-item biofeedback">
+          <div class="timeline-top"><h3>📡 Calibração de biofeedback</h3><span>${data}</span></div>
+          <div class="timeline-body">
+            <strong>FC:</strong> ${v.heart_rate?.status||'—'} &nbsp;|&nbsp; <strong>EDA:</strong> ${v.eda?.status||'—'} &nbsp;|&nbsp; <strong>Pupila:</strong> ${v.pupil?.status||'—'} &nbsp;|&nbsp; <strong>Sessão:</strong> ${liberada}
+          </div>
+        </div>`;
+      }
+    }).join('');
+  } catch(e){ document.getElementById('hist-timeline').innerHTML='<div class="empty">Erro ao carregar histórico.</div>'; }
+}
+
+async function criarUsuario(){
+  const ok=document.getElementById('msg-usuario-ok'), err=document.getElementById('msg-usuario-err');
+  ok.style.display='none'; err.style.display='none';
+  const body = {nome:val('novo-nome'), email:val('novo-email'), senha:val('novo-senha'), role:val('novo-role')};
+  try {
+    const r = await fetch(`${API}/api/usuarios`, {method:'POST', headers:headers(), body:JSON.stringify(body)});
+    const d = await r.json();
+    if(!r.ok){ err.textContent=d.detail||'Erro.'; err.style.display='block'; return; }
+    ok.textContent=`Usuário criado: ${d.email}`; ok.style.display='block';
+    carregarUsuarios();
+  } catch(e){ err.textContent='Erro ao criar usuário.'; err.style.display='block'; }
+}
+
+async function carregarUsuarios(){
+  const lista=document.getElementById('lista-usuarios');
+  lista.innerHTML='<p style="color:#64748b;font-size:13px">Carregando...</p>';
+  try {
+    const r = await fetch(`${API}/api/usuarios`, {headers:headers()});
+    const d = await r.json();
+    lista.innerHTML = d.usuarios.map(u=>`
+      <div class="usuario-card">
+        <div class="usuario-info">
+          <h3>${u.nome}</h3>
+          <p>${u.email} · <span class="badge badge-blue">${u.role}</span></p>
+          <p style="font-size:11px;color:#475569;margin-top:4px">Criado em: ${u.criado_em?u.criado_em.substring(0,10):''}</p>
+        </div>
+        ${u.email!=='admin@reclaim.com'?`<button class="btn-sm btn-del" onclick="removerUsuario('${u.email}')">Remover</button>`:'<span style="font-size:11px;color:#64748b">Admin principal</span>'}
+      </div>`).join('');
+  } catch(e){ lista.innerHTML='<p style="color:#fca5a5;font-size:13px">Erro ao carregar.</p>'; }
+}
+
+async function removerUsuario(email){
+  if(!confirm(`Remover o usuário ${email}?`)) return;
+  try {
+    await fetch(`${API}/api/usuarios/${encodeURIComponent(email)}`, {method:'DELETE', headers:headers()});
+    carregarUsuarios();
+  } catch(e){ alert('Erro ao remover usuário.'); }
+}
+</script>
+</body>
+</html>
