@@ -74,6 +74,13 @@ def listar_perfis(usuario=Depends(obter_usuario_atual)):
     lista = list(pacientes.find({}, {"_id": 0}))
     return {"total": len(lista), "pacientes": lista}
 
+@app.delete("/api/patient-profile/{patient_id}")
+def deletar_perfil(patient_id: str, usuario=Depends(obter_usuario_atual)):
+    resultado = pacientes.delete_one({"patient_id": patient_id})
+    if resultado.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+    return {"mensagem": "Paciente deletado com sucesso", "patient_id": patient_id}
+
 # ─── SESSION CONFIG ──────────────────────────────────────────────────────────
 
 def gerar_session_config(perfil: dict, session_number: int = 1) -> dict:
@@ -397,9 +404,8 @@ def receber_calibracao(patient_id: str, dados: dict, usuario=Depends(obter_usuar
     if not perfil:
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
 
-    # Validação de qualidade do sinal
-    hr_quality  = dados.get("heart_rate", {}).get("signal_quality", 0)
-    eda_quality = dados.get("electrodermal_activity", {}).get("signal_quality", 0)
+    hr_quality    = dados.get("heart_rate", {}).get("signal_quality", 0)
+    eda_quality   = dados.get("electrodermal_activity", {}).get("signal_quality", 0)
     pupil_quality = dados.get("pupil_tracking", {}).get("signal_quality", 0)
 
     def classificar(q):
