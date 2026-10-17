@@ -1,0 +1,18 @@
+{
+  "session_id": "sess_a8b9c102",
+  "patient_id": "pat_789456",
+  "cenario_id": "street_bar_pub",
+  "nivel_dificuldade": "medio", 
+  "parametros_comportamentais": {
+    "pressao_amigos": "moderada",
+    "comportamento_clara": "insistencia_indireta",
+    "reforço_positivo_inicial": false
+  },
+  "videos": {
+    "base": "pub_base_v1.mp4",
+    "desfecho_1": "pub_recusa_firme.mp4",
+    "desfecho_2": "pub_desvio_foco.mp4",
+    "desfecho_3": "pub_saida_segura.mp4",
+    "desfecho_4": "pub_aceitacao_lapso.mp4"
+  }
+}
