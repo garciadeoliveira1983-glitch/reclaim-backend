@@ -69,7 +69,6 @@ anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 # ─── SCHEMAS PYDANTIC (CONFORMIDADE LGPD & VALIDAÇÃO RÍGIDA) ────────────────
 
 class PerfilPacienteCreate(BaseModel):
-    # 'extra="forbid"' garante que nomes, CPFs ou dados identificáveis civis sejam bloqueados
     model_config = ConfigDict(extra="forbid")
 
     therapist_id: Optional[str] = None
@@ -363,11 +362,10 @@ def gerar_texto_laudo(perfil: dict, ultima_sessao: dict, historico_t: list) -> s
     3. Recomendações Terapêuticas para a Próxima Sessão
     """
 
-    # 1. Tentativa de geração via Claude (Anthropic API)
     if anthropic_client and os.getenv("ANTHROPIC_API_KEY"):
         try:
             resposta = anthropic_client.messages.create(
-                model="claude-3-5-sonnet-latest",  # Identificador oficial da API
+                model="claude-3-5-sonnet-latest",
                 max_tokens=1200,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -375,7 +373,6 @@ def gerar_texto_laudo(perfil: dict, ultima_sessao: dict, historico_t: list) -> s
         except Exception as e:
             print(f"⚠️ Aviso: Falha na API Anthropic ({e}). Acionando gerador clínico de contingência...")
 
-    # 2. Fallback Clínico Resiliente (Garante emissão do laudo mesmo offline/sem saldo)
     sar_dominante = ultima_sessao.get('procedural_generation_rules', {}).get('primary_sar_active', 'pressão social')
     cenario = ultima_sessao.get('procedural_generation_rules', {}).get('active_environment_id', 'ambiente padrão')
     
@@ -608,8 +605,9 @@ def listar_telemetrias_paciente(patient_id: str, usuario=Depends(obter_usuario_a
 
 # ─── MONITORAMENTO BIOMÉTRICO E ALERTAS DE SEGURANÇA ────────────────────────
 
+# DEPOIS (Sem exigência estrita de token para o sensor de hardware local):
 @app.post("/api/biometrics/alert/{session_id}")
-def receber_alerta_biometrico(session_id: str, payload: AlertaBiometricoPayload, usuario=Depends(obter_usuario_ou_dispositivo_vr)):
+def receber_alerta_biometrico(session_id: str, payload: AlertaBiometricoPayload):
     sessao = sessoes.find_one({"session_metadata.session_id": session_id})
     if not sessao:
         raise HTTPException(status_code=404, detail="Sessão não encontrada")
@@ -637,7 +635,24 @@ def receber_alerta_biometrico(session_id: str, payload: AlertaBiometricoPayload,
         "status": "alerta_processado",
         "acao_tomada": "grounding_ativado" if payload.abort_triggered else "monitorando"
     }
-from fastapi.responses import FileResponse
+
+@app.get("/api/biometrics/recent/{session_id}")
+def obter_biometria_recente(session_id: str):
+    """
+    Retorna a telemetria mais recente da sessão para alimentar o mostrador em tempo real do painel web.
+    """
+    dado = biometria_col.find_one(
+        {"session_id": session_id},
+        sort=[("timestamp", -1)]
+    )
+    if not dado:
+        return {"bpm": None, "status": "sem_dados"}
+    return {
+        "bpm": dado.get("heart_rate_bpm"),
+        "hrv": dado.get("hrv_ms"),
+        "abort_triggered": dado.get("safety_abort_triggered", False),
+        "timestamp": dado.get("timestamp")
+    }
 
 @app.get("/painel")
 def exibir_painel():

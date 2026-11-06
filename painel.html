@@ -160,6 +160,27 @@
     </div>
   </header>
 
+  <!-- CARTÃO DE BIOMETRIA EM TEMPO REAL (MAGENE H003) -->
+  <div style="padding: 16px 32px 0; background: #1a1d2e;">
+    <div id="card-biometria" style="background: #0f1117; border: 1px solid #2d3748; border-radius: 12px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <span id="icone-coracao" style="font-size: 32px; display: inline-block; transition: transform 0.2s ease;">❤️</span>
+        <div>
+          <div style="font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em;">Frequência Cardíaca (Tempo Real)</div>
+          <div style="font-size: 26px; font-weight: 700; color: #fff; margin-top: 2px;">
+            <span id="valor-bpm">--</span> <span style="font-size: 14px; font-weight: 400; color: #64748b;">BPM</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div id="status-alerta" style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #064e3b; color: #34d399; border: 1px solid #065f46;">
+          SINAL NORMAL
+        </div>
+        <div id="ultima-atualizacao" style="font-size: 11px; color: #64748b; margin-top: 6px;">Aguardando leitura do sensor...</div>
+      </div>
+    </div>
+  </div>
+
   <div class="tabs">
     <button class="tab active" onclick="mostrarAba('aba-pacientes', this)">Pacientes</button>
     <button class="tab" onclick="mostrarAba('aba-historico', this)">Histórico de Sessões</button>
@@ -368,6 +389,7 @@ async function fazerLogin(){
       document.getElementById('tab-usuarios').style.display = 'inline-block';
     }
     carregarPacientes();
+    atualizarBiometriaEmTempoReal();
   } catch(e){ err.style.display='block'; }
 }
 
@@ -601,6 +623,58 @@ async function removerUsuario(email){
     carregarUsuarios();
   } catch(e){ alert('Erro ao remover usuário.'); }
 }
+
+/* ── BIOMETRIA MAGENE H003 EM TEMPO REAL ───────────────────────────── */
+const SESSION_ID_MONITOR = "sess_4197ab1f";
+
+async function atualizarBiometriaEmTempoReal() {
+  if (!TOKEN) return;
+  try {
+    const resp = await fetch(`${API}/api/biometrics/recent/${SESSION_ID_MONITOR}`, {
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    
+    if (!resp.ok) return;
+    const dado = await resp.json();
+    if (!dado || dado.bpm === null || dado.bpm === undefined) return;
+
+    const bpm = Math.round(dado.bpm);
+    const elemBpm = document.getElementById('valor-bpm');
+    const elemStatus = document.getElementById('status-alerta');
+    const elemCoracao = document.getElementById('icone-coracao');
+    const elemHora = document.getElementById('ultima-atualizacao');
+
+    elemBpm.innerText = bpm;
+    elemHora.innerText = `Última leitura: ${new Date().toLocaleTimeString()}`;
+
+    // Pulsação visual sincronizada
+    elemCoracao.style.transform = 'scale(1.25)';
+    setTimeout(() => { elemCoracao.style.transform = 'scale(1.0)'; }, 180);
+
+    // Limiares de segurança clínica
+    if (bpm >= 120) {
+      elemStatus.style.background = '#7f1d1d';
+      elemStatus.style.color = '#fca5a5';
+      elemStatus.style.borderColor = '#991b1b';
+      elemStatus.innerText = '⚠️ ALERTA: TAQUICARDIA';
+    } else if (bpm >= 100) {
+      elemStatus.style.background = '#78350f';
+      elemStatus.style.color = '#fde68a';
+      elemStatus.style.borderColor = '#b45309';
+      elemStatus.innerText = 'ATENÇÃO ELEVADA';
+    } else {
+      elemStatus.style.background = '#064e3b';
+      elemStatus.style.color = '#34d399';
+      elemStatus.style.borderColor = '#065f46';
+      elemStatus.innerText = 'SINAL NORMAL';
+    }
+  } catch (err) {
+    // Silencia erros transitórios de rede
+  }
+}
+
+// Inicia o ciclo de atualização a cada 1 segundo
+setInterval(atualizarBiometriaEmTempoReal, 1000);
 </script>
 </body>
 </html>
